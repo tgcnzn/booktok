@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import { useToast } from '../../contexts/ToastContext';
 
 interface RegisterFormValues {
   email: string;
@@ -22,6 +23,7 @@ const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const recaptchaRef = React.createRef<ReCAPTCHA>();
+  const { showToast } = useToast();
 
   const { 
     register, 
