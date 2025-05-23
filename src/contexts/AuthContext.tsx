@@ -115,27 +115,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: userData
+        }
       });
 
       if (error) {
         throw error;
       }
-
+      
       if (data.user) {
-        // Create profile
-        const { error: profileError } = await supabase
+        // Wait a moment for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Fetch the newly created profile
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .insert([
-            { 
-              id: data.user.id,
-              email: email,
-              ...userData,
-            },
-          ]);
-
-        if (profileError) {
-          throw profileError;
-        }
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (profileError) throw profileError;
+        
+        setProfile(profile as UserProfile);
       }
     } catch (error: any) {
       showToast({ 
