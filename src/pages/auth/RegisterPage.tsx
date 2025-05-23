@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import ReCAPTCHA from 'react-google-recaptcha';
-import { Lock, Mail, User, UserCheck } from 'lucide-react';
+import { Lock, Mail, User, UserCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
@@ -13,7 +13,6 @@ interface RegisterFormValues {
   password: string;
   confirmPassword: string;
   fullName: string;
-  role: 'participant' | 'judge';
   agreeTerms: boolean;
 }
 
@@ -46,7 +45,7 @@ const RegisterPage: React.FC = () => {
     try {
       await signUp(data.email, data.password, {
         full_name: data.fullName,
-        role: data.role,
+        role: 'participant',
       });
       navigate('/');
     } catch (error) {
@@ -122,40 +121,11 @@ const RegisterPage: React.FC = () => {
               error={errors.confirmPassword?.message}
             />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                I am registering as a
-              </label>
-              <div className="mt-1 space-y-3">
-                <div className="flex items-center">
-                  <input
-                    id="role-participant"
-                    type="radio"
-                    value="participant"
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                    {...register('role', { required: 'Please select a role' })}
-                    defaultChecked
-                  />
-                  <label htmlFor="role-participant" className="ml-3 block text-sm text-gray-700">
-                    Participant (I want to submit my work)
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id="role-judge"
-                    type="radio"
-                    value="judge"
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                    {...register('role', { required: 'Please select a role' })}
-                  />
-                  <label htmlFor="role-judge" className="ml-3 block text-sm text-gray-700">
-                    Judge (I am authorized to evaluate submissions)
-                  </label>
-                </div>
-                {errors.role && (
-                  <p className="mt-1 text-sm text-error-600">{errors.role.message}</p>
-                )}
-              </div>
+            <div className="bg-primary-50 p-4 rounded-lg flex items-start">
+              <AlertCircle size={20} className="text-primary-600 mt-0.5 mr-3 flex-shrink-0" />
+              <p className="text-sm text-primary-700">
+                Only participants can register directly. Judges are invited by administrators.
+              </p>
             </div>
 
             <div className="flex items-start">
