@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Lock, Mail, User, UserCheck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/ui/Card';
@@ -20,6 +21,8 @@ const RegisterPage: React.FC = () => {
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = React.createRef<ReCAPTCHA>();
 
   const { 
     register, 
@@ -31,7 +34,11 @@ const RegisterPage: React.FC = () => {
   const password = watch('password', '');
 
   const onSubmit = async (data: RegisterFormValues) => {
-    if (!data.agreeTerms) {
+    if (!data.agreeTerms || !captchaToken) {
+      showToast({
+        message: !captchaToken ? 'Please complete the CAPTCHA verification' : 'You must agree to the terms',
+        type: 'error'
+      });
       return;
     }
 
@@ -177,6 +184,14 @@ const RegisterPage: React.FC = () => {
                   <p className="mt-1 text-sm text-error-600">{errors.agreeTerms.message}</p>
                 )}
               </div>
+            </div>
+            
+            <div className="flex justify-center mb-4">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                onChange={(token) => setCaptchaToken(token)}
+              />
             </div>
 
             <Button
