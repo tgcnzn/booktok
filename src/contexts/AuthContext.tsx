@@ -109,21 +109,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signUp = async (
     email: string, 
     password: string, 
-    userData?: Partial<UserProfile>
+    userData: Partial<UserProfile>
   ) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            full_name: userData?.full_name
-          }
+          data: userData
         }
       });
 
       if (error) {
         throw error;
+      }
+      
+      if (data.user) {
+        // Wait a moment for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Fetch the newly created profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (profileError) throw profileError;
+        
+        setProfile(profile as UserProfile);
       }
     } catch (error: any) {
       showToast({ 
