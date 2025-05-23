@@ -112,26 +112,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     userData: Partial<UserProfile>
   ) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Sign up the user
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: userData.full_name
+          }
+        }
       });
 
-      if (error) {
-        throw error;
-      }
-      
-      if (data.user) {
-        // Update the profile with additional data
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            full_name: userData.full_name,
-            role: 'participant'
-          })
-          .eq('id', data.user.id);
-        
-        if (updateError) throw updateError;
+      if (signUpError) {
+        throw signUpError;
       }
     } catch (error: any) {
       showToast({ 
