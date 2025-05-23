@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { createClient } from '@supabase/supabase-js';
+import fetch from 'node-fetch';
 
 // Load environment variables
 dotenv.config();
@@ -89,9 +90,23 @@ app.post('/api/vote', votingLimiter, async (req, res) => {
   try {
     const { submissionId, userId } = req.body;
     const ipAddress = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const captchaToken = req.body.captchaToken;
     
     if (!submissionId || !userId) {
       return res.status(400).json({ error: 'Missing required parameters' });
+    }
+    
+    // Verify CAPTCHA
+    const captchaVerification = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${captchaToken}`
+    });
+    
+    const captchaResult = await captchaVerification.json();
+    
+    if (!captchaResult.success) {
+      return res.status(400).json({ error: 'CAPTCHA verification failed' });
     }
     
     // Check if voting is enabled

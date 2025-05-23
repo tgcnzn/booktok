@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { useSupabase } from '../../contexts/SupabaseContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -35,6 +36,8 @@ const VotingPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [votingEnabled, setVotingEnabled] = useState(true);
   const [userVotes, setUserVotes] = useState<{[key: string]: boolean}>({});
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = React.createRef<ReCAPTCHA>();
 
   useEffect(() => {
     fetchFinalists();
@@ -153,6 +156,14 @@ const VotingPage: React.FC = () => {
       return;
     }
     
+    if (!captchaToken) {
+      showToast({
+        message: 'Por favor, complete o CAPTCHA antes de votar',
+        type: 'warning'
+      });
+      return;
+    }
+    
     try {
       // Insert vote record
       const { error: voteError } = await supabase
@@ -161,6 +172,7 @@ const VotingPage: React.FC = () => {
           user_id: user!.id,
           submission_id: finalistId,
           ip_address: '127.0.0.1', // In a real app, you'd get the actual IP
+          captcha_token: captchaToken,
         });
         
       if (voteError) throw voteError;
@@ -199,8 +211,12 @@ const VotingPage: React.FC = () => {
         return updated;
       });
       
+      // Reset captcha
+      setCaptchaToken(null);
+      recaptchaRef.current?.reset();
+      
       showToast({
-        message: 'Your vote has been recorded!',
+        message: 'Seu voto foi registrado!',
         type: 'success'
       });
     } catch (error: any) {
@@ -339,9 +355,19 @@ const VotingPage: React.FC = () => {
                         size="sm"
                         onClick={() => handleVote(finalist.id)}
                         disabled={!votingEnabled || userVotes[finalist.id]}
+                        className="mb-2"
                       >
-                        {userVotes[finalist.id] ? "Voted" : "Vote"}
+                        {userVotes[finalist.id] ? "Votado" : "Votar"}
                       </Button>
+                      {!userVotes[finalist.id] && (
+                        <div className="mt-2">
+                          <ReCAPTCHA
+                            ref={recaptchaRef}
+                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                            onChange={(token) => setCaptchaToken(token)}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
