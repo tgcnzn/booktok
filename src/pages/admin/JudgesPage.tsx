@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useSupabase } from '../../contexts/SupabaseContext';
 import { useToast } from '../../contexts/ToastContext';
 import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { Search, User, UserPlus, Edit, Trash2, Award } from 'lucide-react';
+import Button from '../../components/ui/Button';
+import { Search, User, UserPlus, Edit, Trash2, Award, Mail, Lock } from 'lucide-react';
 
 interface Judge {
   id: string;
@@ -26,11 +26,22 @@ const JudgesPage: React.FC = () => {
   const [newJudgeEmail, setNewJudgeEmail] = useState('');
   const [newJudgeName, setNewJudgeName] = useState('');
   const [newJudgeGenre, setNewJudgeGenre] = useState('');
+  const [generatedPassword, setGeneratedPassword] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchJudges();
   }, []);
+
+  const generatePassword = () => {
+    const length = 12;
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
+  };
 
   const fetchJudges = async () => {
     setIsLoading(true);
@@ -77,6 +88,7 @@ const JudgesPage: React.FC = () => {
     
     setIsSubmitting(true);
     try {
+      const password = generatePassword();
       // First check if user already exists
       const { data: existingUser, error: checkError } = await supabase
         .from('profiles')
@@ -100,36 +112,41 @@ const JudgesPage: React.FC = () => {
           .eq('id', existingUser.id);
         
         if (updateError) throw updateError;
-        
-        showToast({
-          message: 'User updated to judge role successfully',
-          type: 'success',
-        });
       } else {
-        // Create a new user with judge role
-        // In a real app, you'd use auth.admin.createUser or invite via email
-        // This is simplified for the demo
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            email: newJudgeEmail,
-            full_name: newJudgeName,
-            role: 'judge',
-            assigned_genre: newJudgeGenre || null,
-          });
-        
-        if (insertError) throw insertError;
-        
-        showToast({
-          message: 'Judge added successfully',
-          type: 'success',
+        // Create new auth user
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: newJudgeEmail,
+          password: password,
+          email_confirm: true
         });
+
+        if (authError) throw authError;
+
+        // Update role to judge if user exists
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            role: 'judge',
+            full_name: newJudgeName,
+            assigned_genre: newJudgeGenre || null,
+          })
+          .eq('id', existingUser.id);
+        
+        if (updateError) throw updateError;
       }
+
+      setGeneratedPassword(password);
+      
+      showToast({
+        message: 'Judge added successfully',
+        type: 'success',
+      });
       
       // Reset form and refresh judge list
       setNewJudgeEmail('');
       setNewJudgeName('');
       setNewJudgeGenre('');
+      setGeneratedPassword('');
       setShowAddJudgeForm(false);
       fetchJudges();
     } catch (error: any) {
@@ -140,6 +157,31 @@ const JudgesPage: React.FC = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleChangePassword = async (judgeId: string) => {
+    try {
+      const newPassword = generatePassword();
+      
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        judgeId,
+        { password: newPassword }
+      );
+      
+      if (updateError) throw updateError;
+      
+      setGeneratedPassword(newPassword);
+      showToast({
+        message: 'Password updated successfully',
+        type: 'success',
+      });
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      showToast({
+        message: error.message || 'Failed to update password',
+        type: 'error',
+      });
     }
   };
 
@@ -198,6 +240,18 @@ const JudgesPage: React.FC = () => {
       {showAddJudgeForm && (
         <Card className="mb-6 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New Judge</h2>
+          {generatedPassword && (
+            <div className="bg-success-50 p-4 rounded-lg mb-4">
+              <h3 className="font-medium text-success-700 mb-2">Judge Account Created Successfully</h3>
+              <p className="text-success-600 mb-2">
+                Please securely share these credentials with the judge:
+              </p>
+              <div className="bg-white p-3 rounded border border-success-200">
+                <p className="text-sm mb-1"><strong>Email:</strong> {newJudgeEmail}</p>
+                <p className="text-sm"><strong>Password:</strong> {generatedPassword}</p>
+              </div>
+            </div>
+          )}
           <form onSubmit={handleAddJudge}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <Input
@@ -327,6 +381,12 @@ const JudgesPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button className="text-primary-600 hover:text-primary-900 mr-3">
                         <Edit size={18} />
+                      </button>
+                      <button
+                        className="text-secondary-600 hover:text-secondary-900 mr-3"
+                        onClick={() => handleChangePassword(judge.id)}
+                      >
+                        <Lock size={18} />
                       </button>
                       <button 
                         className="text-error-600 hover:text-error-900"
