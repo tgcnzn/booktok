@@ -44,7 +44,7 @@ export const workouts: Workout[] = [
         name: 'Cross Over',
         sets: 3,
         reps: ['10+10', '10+10', '10+10'],
-        youtubeId: 'poe7X02U2qw',
+        youtubeId: '55nyV_aosNk',
       },
       {
         id: 4,
