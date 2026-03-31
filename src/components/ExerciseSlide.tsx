@@ -14,7 +14,7 @@ interface Props {
 export default function ExerciseSlide({ exercise, index, total, workoutColor, workoutLetter }: Props) {
   return (
     <div className="snap-item relative flex flex-col justify-end overflow-hidden">
-      <YouTubeBackground shortId={exercise.youtubeShortId} />
+      <YouTubeBackground videoId={exercise.youtubeId} />
 
       <div className="relative z-10 p-6 pb-10">
         {/* Exercise counter */}

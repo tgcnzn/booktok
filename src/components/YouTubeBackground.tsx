@@ -1,22 +1,22 @@
 interface Props {
-  shortId: string;
+  videoId: string;
 }
 
-export default function YouTubeBackground({ shortId }: Props) {
+export default function YouTubeBackground({ videoId }: Props) {
+  const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&controls=0&playsinline=1&playlist=${videoId}&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&origin=${window.location.origin}`;
+
   return (
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-black" />
+    <div className="absolute inset-0 overflow-hidden bg-black">
       <iframe
-        src={`https://www.youtube.com/embed/${shortId}?autoplay=1&mute=1&loop=1&controls=0&playsinline=1&playlist=${shortId}&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1`}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+        src={src}
+        className="absolute top-1/2 left-1/2 pointer-events-none"
         style={{
-          width: '100vw',
-          height: '100vh',
-          minWidth: '100%',
-          minHeight: '100%',
-          objectFit: 'cover',
+          width: '200vw',
+          height: '200vh',
+          transform: 'translate(-50%, -50%)',
+          border: 'none',
         }}
-        allow="autoplay; encrypted-media"
+        allow="autoplay; encrypted-media; accelerometer; gyroscope"
         allowFullScreen
         title="Exercise demo"
       />
